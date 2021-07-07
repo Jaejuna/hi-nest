@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { UpdateMovieDto } from './dto/update-movie.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreateMovieDto } from './dto/create-movie.dto';
 import { Movie } from './entities/movie.entity';
 
 @Injectable()
@@ -9,19 +11,33 @@ export class MoviesService {
     return this.movies;
   }
 
-  getOne(id: string): Movie {
-    return this.movies.find(movie => movie.id === +id);
+  getOne(id: number): Movie {
+    // "+" makes id into number but with tranform on main.ts we don't need it anymore
+    const movie = this.movies.find(movie => movie.id === id);
+    if (!movie) {
+      throw new NotFoundException(`Movie with ID ${id} not found.`);
+    }
+    return movie;
   }
 
-  deleteOne(id:string):boolean{
-    this.movies.filter(movie => movie.id !== +id);
-    return true;
+  deleteOne(id: number) {
+    this.getOne(id);
+    this.movies = this.movies.filter(movie => movie.id !== id);
   }
 
-  create(movieData) {
+  create(movieData: CreateMovieDto) {
     this.movies.push({
       id: this.movies.length + 1,
       ...movieData,
     });
+  }
+
+  update(id: number, updateData: UpdateMovieDto) {
+    //get the id first
+    const movie = this.getOne(id);
+    //delete it
+    this.deleteOne(id);
+    //changing the old one(movie) to new one(updateData)
+    this.movies.push({ ...movie, ...updateData });
   }
 }
